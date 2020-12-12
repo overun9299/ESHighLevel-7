@@ -1,7 +1,13 @@
 package soap;
 
 
+
+import com.alibaba.fastjson.JSONObject;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.IndicesClient;
 import org.elasticsearch.client.RequestOptions;
@@ -10,14 +16,20 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import soap.pojo.MyUser;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
 
 /**
  * Created by ZhangPY on 2020/12/12
@@ -72,5 +84,59 @@ public class ESTest {
         DeleteIndexRequest java_test = new DeleteIndexRequest("java_test");
         AcknowledgedResponse delete = client.indices().delete(java_test, RequestOptions.DEFAULT);
         System.out.println(delete.isAcknowledged());
+    }
+
+    /**
+     * 测试添加文档，索引必须存在
+     */
+    @Test
+    public void testAddDocument() throws IOException {
+        /** 创建对象 **/
+        MyUser myUser = new MyUser();
+        myUser.setName("张三plus").setAge(18).setAddress("陕西省西安市周至县");
+
+        /** 创建请求 **/
+        IndexRequest request = new IndexRequest("java_test");
+
+        /** 规则 put/java_test/_doc/1 **/
+
+        /** id可设置可不设置，不设置es会自动生成 **/
+        request.id("1");
+        request.timeout(TimeValue.timeValueSeconds(1));
+
+        /** 将我们的数据放入请求 json **/
+        request.source(JSONObject.toJSONString(myUser), XContentType.JSON);
+
+        /** 客户端发送请求，获取响应结果 **/
+        IndexResponse index = client.index(request, RequestOptions.DEFAULT);
+
+        System.out.println(index.toString());
+        System.out.println(index.status());
+
+    }
+
+    /**
+     * 批量添加文档
+     */
+    @Test
+    public void testAddBatchDocument() throws IOException {
+
+        /** 构建list **/
+        List<MyUser> myUserList = new ArrayList<>();
+        myUserList.add(new MyUser().setName("张三丰").setAge(21).setAddress("河北省保定").setId("3"));
+        myUserList.add(new MyUser().setName("王实甫").setAge(28).setAddress("山西省史蒂夫").setId("4"));
+
+        /** 批量请求对象 **/
+        BulkRequest request = new BulkRequest();
+
+        /** 批量请求 **/
+        for (MyUser myUser : myUserList) {
+            request.add(new IndexRequest("java_test").id(myUser.getId()).source(JSONObject.toJSONString(myUser),XContentType.JSON));
+        }
+        /** 发送请求 **/
+        BulkResponse bulk = client.bulk(request, RequestOptions.DEFAULT);
+
+        System.out.println(bulk.toString());
+        System.out.println(bulk.status());
     }
 }
