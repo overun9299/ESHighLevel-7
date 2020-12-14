@@ -6,9 +6,15 @@ import com.alibaba.fastjson.JSONObject;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.IndicesClient;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -138,5 +144,61 @@ public class ESTest {
 
         System.out.println(bulk.toString());
         System.out.println(bulk.status());
+    }
+
+    /**
+     * 判断文档是否存在
+     */
+    @Test
+    public void testDocumentIsExists() throws IOException {
+        GetRequest java_test = new GetRequest("java_test", "2");
+
+        boolean exists = client.exists(java_test, RequestOptions.DEFAULT);
+
+        System.out.println(exists);
+    }
+
+    /**
+     * 获取文档
+     */
+    @Test
+    public void testGetDocument() throws IOException {
+        GetRequest java_test = new GetRequest("java_test", "4");
+
+        GetResponse documentFields = client.get(java_test, RequestOptions.DEFAULT);
+
+        System.out.println(documentFields.getSourceAsString());
+        System.out.println(documentFields.getSourceAsMap());
+        System.out.println(documentFields);
+    }
+
+    /**
+     * 更新文档
+     * @throws IOException
+     */
+    @Test
+    public void testUpdateDocument() throws IOException {
+        UpdateRequest java_test = new UpdateRequest("java_test", "4");
+        /** 更新内容 **/
+        MyUser myUser = new MyUser().setName("王实甫").setAge(98).setAddress("山西省史蒂夫").setId("4");
+        /** 更新请求 **/
+        java_test.doc(JSONObject.toJSONString(myUser), XContentType.JSON);
+
+        UpdateResponse update = client.update(java_test, RequestOptions.DEFAULT);
+
+        System.out.println(update.status());
+    }
+
+
+    /**
+     * 测试删除文档
+     */
+    @Test
+    public void testDeleteDocument() throws IOException {
+        DeleteRequest java_test = new DeleteRequest("java_test", "2");
+
+        DeleteResponse delete = client.delete(java_test, RequestOptions.DEFAULT);
+
+        System.out.println(delete.status());
     }
 }
