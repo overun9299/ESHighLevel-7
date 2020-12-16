@@ -12,6 +12,10 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -24,6 +28,12 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.MatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -200,5 +210,41 @@ public class ESTest {
         DeleteResponse delete = client.delete(java_test, RequestOptions.DEFAULT);
 
         System.out.println(delete.status());
+    }
+
+
+    /**
+     * 测试查询文档
+     * SearchRequest 搜索请求
+     * SearchSourceBuilder 条件构造
+     * HighlightBuilder 构建高亮
+     * TermQueryBuilder 精确查询
+     * MatchAllQueryBuilder 模糊查询
+     * 详细搜索请参考 ES6项目 https://github.com/overun9299/ElasticSearchHighLevel-6.git
+     */
+    @Test
+    public void testSearchDocument() throws IOException {
+        SearchRequest java_test = new SearchRequest("java_test");
+        /** 构建搜索条件 **/
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        /** 构建查询体 **/
+        /** 查询条件，我么可以使用QueryBuilders工具来实现 **/
+        MatchQueryBuilder matchQueryBuilder = QueryBuilders.matchQuery("address", "陕西");
+        searchSourceBuilder.query(matchQueryBuilder);
+        /** 构建高亮字段 **/
+        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        highlightBuilder.preTags("<tag>");
+        highlightBuilder.postTags("</tag>");
+        /** 对name加高亮 */
+        highlightBuilder.fields().add(new HighlightBuilder.Field("address"));
+        searchSourceBuilder.highlighter(highlightBuilder);
+        java_test.source(searchSourceBuilder);
+
+        SearchResponse search = client.search(java_test, RequestOptions.DEFAULT);
+
+        for (SearchHit hit : search.getHits().getHits()) {
+            System.out.println(hit.getSourceAsString());
+        }
+
     }
 }

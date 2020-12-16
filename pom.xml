@@ -60,6 +60,13 @@
             <version>7.6.1</version>
         </dependency>
 
+        <!-- 解析网页,爬取网页数据   爬取电影、音乐可以用tika包 -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.13.1</version>
+        </dependency>
+
         <!-- hutool -->
         <dependency>
             <groupId>cn.hutool</groupId>
